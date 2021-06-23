@@ -1,0 +1,20 @@
+{
+  "executionRoleArn": "nginx-ecs-task-execution-role",
+  "containerDefinitions": [
+    {
+      "portMappings": [
+        {
+          "hostPort": 80,
+          "protocol": "tcp",
+          "containerPort": 80
+        }
+      ],
+      "image": "Placeholder: GitHub Actions will fill this in",
+      "name": "nginx"
+    }
+  ],
+  "memory": "512",
+  "family": "service",
+  "networkMode": "awsvpc",
+  "cpu": "256"
+}
