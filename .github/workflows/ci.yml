@@ -28,7 +28,7 @@ jobs:
           app-id: ${{ secrets.ACCURICS_APP_ID }}
           env-id: ${{ secrets.ACCURICS_ENV_ID }}
           # Optional args
-          terraform-version: 0.14
+          terraform-version: 0.14.7
 
       - name: Display Accurics statistics
         run: '
