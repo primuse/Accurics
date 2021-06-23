@@ -15,69 +15,106 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-      - name: Build, tag, and push image to Amazon ECR
-        env:
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          IMAGE_TAG: latest
-          CONTEXT: nginx
-        run: |
-          docker build -t $ECR_REPOSITORY:$IMAGE_TAG $CONTEXT
-          docker push $ECR_REPOSITORY:$IMAGE_TAG
-      -
-        name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
-  deploy-us-east-1:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+
+      - name: Accurics Scan
+        uses: accurics/accurics-action@v1.3.1
+        id: accurics
+        env: 
+          # Required by Terraform
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-      - name: Render Amazon ECS task definition for first container
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        id: render-task-definition
-        with:
-          task-definition: nginx/aws/task-definition.json
-          container-name: nginx
-          image: ${{ secrets.ECR_REPOSITORY }}:latest
-      - name: Deploy to Amazon ECS (us-west-1)
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: ${{ steps.render-task-definition.outputs.task-definition }}
-          service: nginx-service
-          cluster: ecs-cluster
-          codedeploy-appspec: nginx/aws/appspec.yaml
-          codedeploy-application: nginx
-          codedeploy-deployment-group: nginx-deployment-group
-  deploy-us-west-1:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-west-1
-      - name: Render Amazon ECS task definition for first container
-        id: render-task-definition
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: nginx/aws/task-definition.json
-          container-name: nginx
-          image: ${{ secrets.ECR_REPOSITORY }}:latest
-      - name: Deploy to Amazon ECS (us-west-1)
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: ${{ steps.render-task-definition.outputs.task-definition }}
-          service: nginx-service
-          cluster: ecs-cluster
-          codedeploy-appspec: nginx/aws/appspec.yaml
-          codedeploy-application: nginx
-          codedeploy-deployment-group: nginx-deployment-group
+          # Required by Accurics
+          app-id: ${{ secrets.ACCURICS_APP_ID }}
+          env-id: ${{ secrets.ACCURICS_ENV_ID }}
+          # Optional args
+          terraform-version: 0.14
+
+      - name: Display Accurics statistics
+        run: '
+            echo ""
+            echo "Environment Name           : ${{ steps.accurics.outputs.env-name }}";
+            echo "Repository                 : ${{ steps.accurics.outputs.repo }}";
+            echo "Violation Count            : ${{ steps.accurics.outputs.num-violations }}";
+            echo "Resource Count             : ${{ steps.accurics.outputs.num-resources }}";
+            echo ""
+            echo "Native Resources           : ${{ steps.accurics.outputs.native }}";
+            echo "Inherited Resources        : ${{ steps.accurics.outputs.inherited }}";
+            echo ""
+            echo "High-Severity Violations   : ${{ steps.accurics.outputs.high }}";
+            echo "Medium-Severity Violations : ${{ steps.accurics.outputs.medium }}";
+            echo "Low-Severity Violations    : ${{ steps.accurics.outputs.low }}";
+            echo ""
+            echo "Drift                      : ${{ steps.accurics.outputs.drift }}";
+            echo "IaC Drift                  : ${{ steps.accurics.outputs.iacdrift }}";
+            echo "Cloud Drift                : ${{ steps.accurics.outputs.clouddrift }}";
+            echo ""
+          '
+
+      
+  #     - name: Login to Amazon ECR
+  #       id: login-ecr
+  #       uses: aws-actions/amazon-ecr-login@v1
+  #     - name: Build, tag, and push image to Amazon ECR
+  #       env:
+  #         ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+  #         IMAGE_TAG: latest
+  #         CONTEXT: nginx
+  #       run: |
+  #         docker build -t $ECR_REPOSITORY:$IMAGE_TAG $CONTEXT
+  #         docker push $ECR_REPOSITORY:$IMAGE_TAG
+  #     -
+  #       name: Image digest
+  #       run: echo ${{ steps.docker_build.outputs.digest }}
+  # deploy-us-east-1:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v1
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: us-east-1
+  #     - name: Render Amazon ECS task definition for first container
+  #       uses: aws-actions/amazon-ecs-render-task-definition@v1
+  #       id: render-task-definition
+  #       with:
+  #         task-definition: nginx/aws/task-definition.json
+  #         container-name: nginx
+  #         image: ${{ secrets.ECR_REPOSITORY }}:latest
+  #     - name: Deploy to Amazon ECS (us-west-1)
+  #       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+  #       with:
+  #         task-definition: ${{ steps.render-task-definition.outputs.task-definition }}
+  #         service: nginx-service
+  #         cluster: ecs-cluster
+  #         codedeploy-appspec: nginx/aws/appspec.yaml
+  #         codedeploy-application: nginx
+  #         codedeploy-deployment-group: nginx-deployment-group
+  # deploy-us-west-1:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v1
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: us-west-1
+  #     - name: Render Amazon ECS task definition for first container
+  #       id: render-task-definition
+  #       uses: aws-actions/amazon-ecs-render-task-definition@v1
+  #       with:
+  #         task-definition: nginx/aws/task-definition.json
+  #         container-name: nginx
+  #         image: ${{ secrets.ECR_REPOSITORY }}:latest
+  #     - name: Deploy to Amazon ECS (us-west-1)
+  #       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+  #       with:
+  #         task-definition: ${{ steps.render-task-definition.outputs.task-definition }}
+  #         service: nginx-service
+  #         cluster: ecs-cluster
+  #         codedeploy-appspec: nginx/aws/appspec.yaml
+  #         codedeploy-application: nginx
+  #         codedeploy-deployment-group: nginx-deployment-group
