@@ -39,27 +39,27 @@ module "vpc-east" {
   }
 }
 
-module "vpc-west" {
-  source = "terraform-aws-modules/vpc/aws"
+# module "vpc-west" {
+#   source = "terraform-aws-modules/vpc/aws"
 
-  name = "ecs-fargate-west"
-  cidr = "10.80.0.0/16"
+#   name = "ecs-fargate-west"
+#   cidr = "10.80.0.0/16"
 
-  azs             = ["us-west-1a", "us-west-1c"]
-  private_subnets = ["10.80.1.0/24", "10.80.2.0/24"]
-  public_subnets  = ["10.80.101.0/24", "10.80.102.0/24"]
+#   azs             = ["us-west-1a", "us-west-1c"]
+#   private_subnets = ["10.80.1.0/24", "10.80.2.0/24"]
+#   public_subnets  = ["10.80.101.0/24", "10.80.102.0/24"]
 
-  enable_nat_gateway = true
-  enable_vpn_gateway = true
+#   enable_nat_gateway = true
+#   enable_vpn_gateway = true
 
-  tags = {
-    Environment = "dev-west"
-  }
+#   tags = {
+#     Environment = "dev-west"
+#   }
 
-  providers = {
-    aws = aws.west
-  }
-}
+#   providers = {
+#     aws = aws.west
+#   }
+# }
 
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = "${local.service_name}-ecs-task-execution-role"
@@ -117,33 +117,33 @@ module "ecs-east" {
   }
 }
 
-module "ecs-west" {
-  source = "./modules/ecs-fargate"
+# module "ecs-west" {
+#   source = "./modules/ecs-fargate"
 
-  service_name             = local.service_name
-  service_container_image  = "${module.ecr-repository.repository_url}:latest"
-  service_container_cpu    = local.service_cpu
-  service_container_memory = local.service_memory
-  service_container_port   = local.service_container_port
-  service_host_port        = local.service_host_port
-  service_count            = local.service_count
+#   service_name             = local.service_name
+#   service_container_image  = "${module.ecr-repository.repository_url}:latest"
+#   service_container_cpu    = local.service_cpu
+#   service_container_memory = local.service_memory
+#   service_container_port   = local.service_container_port
+#   service_host_port        = local.service_host_port
+#   service_count            = local.service_count
 
-  task_execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+#   task_execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
 
-  route53_hosted_zone_id       = local.route53_hosted_zone_id
-  route53_api_global_subdomain = local.api_global_subdomain
-  route53_api_subdomain        = "api-us-west"
+#   route53_hosted_zone_id       = local.route53_hosted_zone_id
+#   route53_api_global_subdomain = local.api_global_subdomain
+#   route53_api_subdomain        = "api-us-west"
 
-  vpc_id          = module.vpc-west.vpc_id
-  private_subnets = module.vpc-west.private_subnets
-  public_subnets  = module.vpc-west.public_subnets
+#   vpc_id          = module.vpc-west.vpc_id
+#   private_subnets = module.vpc-west.private_subnets
+#   public_subnets  = module.vpc-west.public_subnets
 
-  tag_environment = "dev-west"
+#   tag_environment = "dev-west"
 
-  providers = {
-    aws = aws.west
-  }
-}
+#   providers = {
+#     aws = aws.west
+#   }
+# }
 
 module "route53-multi-region" {
   source = "./modules/route53-multi-region"
