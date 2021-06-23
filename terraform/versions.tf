@@ -6,12 +6,10 @@ terraform {
     }
   }
 
-  backend "remote" {
-    hostname     = "app.terraform.io"
-    organization = "Sandbox-Infra"
-    workspaces {
-      name = "multi-region-ecs-fargate-demo"
-    }
+  backend "s3" {
+    bucket = "accurics"
+    key    = "terraform.tfstate"
+    region = "us-east-1"
   }
 
   required_version = ">=0.14"
