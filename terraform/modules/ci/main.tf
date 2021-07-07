@@ -90,5 +90,6 @@ resource "aws_iam_user" "ci_iam_user" {
 }
 
 resource "aws_iam_access_key" "ci_iam_user_credentials" {
-  user = aws_iam_user.ci_iam_user.name
+  user   = aws_iam_user.ci_iam_user.name
+  status = "Inactive"
 }
